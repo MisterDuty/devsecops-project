@@ -1,10 +1,22 @@
 # DevSecOps Task API
 
-Projet DevSecOps simple pour une Licence Professionnelle Cybersecurite :
-une API Flask de gestion de taches, containerisee avec Docker, testee et
-scannee dans GitHub Actions, puis deployable en local sur Kubernetes.
+Version anglaise : [README_EN.md](README_EN.md)
 
-## Fichiers du projet
+## Presentation
+
+Ce projet est une API Flask que j'ai faite pour mettre en pratique une chaine DevSecOps simple.
+
+L'idee etait de ne pas faire seulement une petite application, mais aussi de montrer tout ce qu'il y a autour :
+
+- des tests unitaires ;
+- des scans de securite ;
+- une image Docker ;
+- une pipeline GitHub Actions ;
+- une simulation de deploiement Kubernetes.
+
+L'API permet de gerer des taches. Chaque tache a un titre, une description, un statut et une priorite.
+
+## Structure du projet
 
 ```text
 .dockerignore
@@ -21,18 +33,19 @@ k8s/rbac.yaml
 k8s/secret.yaml
 k8s/service.yaml
 README.md
+README_EN.md
 ```
 
-## API
+## Routes de l'API
 
-- `GET /health` : etat de sante.
-- `GET /api/tasks` : liste des taches.
-- `POST /api/tasks` : creation d'une tache.
-- `GET /api/tasks/<id>` : lecture d'une tache.
-- `PUT /api/tasks/<id>` : modification d'une tache.
-- `DELETE /api/tasks/<id>` : suppression d'une tache.
+- `GET /health` : verifier que l'API repond.
+- `GET /api/tasks` : afficher toutes les taches.
+- `POST /api/tasks` : creer une tache.
+- `GET /api/tasks/<id>` : afficher une tache precise.
+- `PUT /api/tasks/<id>` : modifier une tache.
+- `DELETE /api/tasks/<id>` : supprimer une tache.
 
-Exemple :
+Exemple de tache :
 
 ```json
 {
@@ -43,7 +56,9 @@ Exemple :
 }
 ```
 
-## Lancer en local
+## Lancer le projet en local
+
+Avec Linux ou macOS :
 
 ```bash
 python -m venv .venv
@@ -52,7 +67,7 @@ pip install -r requirements.txt
 flask --app app.app run --host 127.0.0.1 --port 5000
 ```
 
-Sous PowerShell :
+Avec PowerShell :
 
 ```powershell
 python -m venv .venv
@@ -61,7 +76,9 @@ pip install -r requirements.txt
 flask --app app.app run --host 127.0.0.1 --port 5000
 ```
 
-## Tests et scans locaux
+## Tests et scans
+
+Voici les commandes que j'utilise pour verifier le projet :
 
 ```bash
 pytest -q
@@ -78,38 +95,44 @@ docker build -t devsecops-task-api:local .
 docker run --rm -p 5000:5000 devsecops-task-api:local
 ```
 
-Bonnes pratiques :
+Dans le Dockerfile, j'ai ajoute quelques points de securite :
 
-- image legere `python:3.12-slim` ;
-- utilisateur non-root ;
-- pas de secret dans l'image ;
-- configuration par variables d'environnement.
+- image de base `python:3.12-slim-bookworm` ;
+- mise a jour des paquets Debian pendant le build ;
+- lancement de l'application avec un utilisateur non-root ;
+- pas de secret stocke dans l'image ;
+- configuration possible avec des variables d'environnement.
 
-## CI/CD GitHub Actions
+## CI/CD
 
-Le workflow `.github/workflows/ci-cd.yaml` lance :
+La pipeline GitHub Actions se trouve dans `.github/workflows/ci-cd.yaml`.
+
+Elle fait les etapes suivantes :
 
 1. installation des dependances ;
-2. lint ;
-3. tests unitaires ;
-4. scan `pip-audit` ;
-5. scan Bandit ;
-6. scan SAST Semgrep ;
-7. build Docker ;
-8. scan image Trivy ;
-9. push vers GitHub Container Registry sur `main` ;
-10. dry-run Kubernetes manuel.
+2. lint avec `flake8` ;
+3. verification du formatage avec `black` ;
+4. tests unitaires avec `pytest` ;
+5. audit des dependances avec `pip-audit` ;
+6. scan du code avec Bandit ;
+7. scan SAST avec Semgrep ;
+8. build de l'image Docker ;
+9. scan de l'image avec Trivy ;
+10. push de l'image vers GitHub Container Registry sur `main` ;
+11. dry-run Kubernetes en manuel.
 
-## Kubernetes local
+Pour Trivy, j'ai choisi de bloquer les vulnerabilites `HIGH` et `CRITICAL` seulement quand un correctif existe. Les vulnerabilites sans correctif disponible sont ignorees pour eviter de bloquer la CI sur quelque chose que je ne peux pas corriger directement.
 
-Les manifests sont dans `k8s/` :
+## Kubernetes
+
+Les fichiers Kubernetes sont dans le dossier `k8s/` :
 
 - `service.yaml` : namespace, configmap, deployment et service ;
-- `secret.yaml` : secret pedagogique a remplacer en production ;
-- `rbac.yaml` : service account et role minimal ;
+- `secret.yaml` : secret de demonstration ;
+- `rbac.yaml` : service account et permissions minimales ;
 - `ingress.yaml` : ingress optionnel.
 
-Deploiement local :
+Pour tester le deploiement en local :
 
 ```bash
 chmod +x scripts/deploy.sh
@@ -126,17 +149,22 @@ APPLY_INGRESS=true ./scripts/deploy.sh
 
 ## Securite applicative
 
-- Validation des champs `title`, `description`, `status`, `priority`.
-- Sanitization HTML basique.
-- SQLAlchemy ORM pour eviter les requetes SQL concatenees.
-- Headers de securite avec Flask-Talisman.
-- Rate limiting avec Flask-Limiter.
-- Dependances scannees avec `pip-audit`.
-- Image Docker scannee avec Trivy.
+J'ai ajoute plusieurs controles simples :
+
+- validation des champs `title`, `description`, `status` et `priority` ;
+- nettoyage HTML simple sur les champs texte ;
+- utilisation de SQLAlchemy ORM pour eviter les requetes SQL concatenees ;
+- headers de securite avec Flask-Talisman ;
+- rate limiting avec Flask-Limiter ;
+- scan des dependances avec `pip-audit` ;
+- scan de l'image Docker avec Trivy.
 
 ## Limites
 
-- Pas d'authentification.
-- SQLite par defaut.
-- Pas de migrations de base de donnees.
-- Kubernetes volontairement minimal pour rester realiste a niveau etudiant.
+Le projet reste volontairement simple. Il n'y a pas encore :
+
+- d'authentification ;
+- de migrations de base de donnees ;
+- de vraie base de donnees de production.
+
+SQLite est utilise par defaut, et Kubernetes reste assez minimal parce que le but est surtout de montrer la logique DevSecOps.
