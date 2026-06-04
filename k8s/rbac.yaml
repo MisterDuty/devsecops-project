@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: task-api-sa
+  namespace: devsecops-task-api
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: task-api-minimal-role
+  namespace: devsecops-task-api
+rules: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: task-api-read-config-binding
+  namespace: devsecops-task-api
+subjects:
+  - kind: ServiceAccount
+    name: task-api-sa
+    namespace: devsecops-task-api
+roleRef:
+  kind: Role
+  name: task-api-minimal-role
+  apiGroup: rbac.authorization.k8s.io
