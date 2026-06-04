@@ -10,7 +10,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_talisman import Talisman
 from sqlalchemy.exc import SQLAlchemyError
 
-
 load_dotenv()
 db = SQLAlchemy()
 
