@@ -13,7 +13,6 @@ permissions:
   security-events: write
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
   PYTHONPATH: ${{ github.workspace }}
 
 jobs:
@@ -69,6 +68,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Normalize image name
+        id: image-meta
+        run: |
+          image_name="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "IMAGE_NAME=${image_name}" >> "$GITHUB_ENV"
+          echo "name=${image_name}" >> "$GITHUB_OUTPUT"
+
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
@@ -83,7 +89,7 @@ jobs:
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@v0.24.0
         with:
-          image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ steps.image-meta.outputs.name }}:${{ github.sha }}
           format: table
           severity: HIGH,CRITICAL
           exit-code: "1"
